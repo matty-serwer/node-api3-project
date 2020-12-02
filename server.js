@@ -1,8 +1,12 @@
 const express = require("express");
+const morgan = require("morgan");
 const userRouter = require("./users/userRouter");
 const postRouter = require("./posts/postRouter");
 
 const server = express();
+
+server.use(morgan('dev'));
+server.use(express.json());
 
 server.use("/api/users", logger, userRouter);
 server.use("/api/posts", logger, postRouter);
