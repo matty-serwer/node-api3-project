@@ -55,8 +55,13 @@ router.get("/:id", validateUserId, (req, res) => {
   res.status(200).json(req.user)
 });
 
-router.get("/:id/posts", (req, res) => {
-  // do your magic!
+router.get("/:id/posts", validateUserId, (req, res) => {
+  User.getUserPosts(req.params.id).then(posts => {
+    res.status(200).json(posts)
+  }).catch(error => {
+    console.log(error)
+    res.status(500).json({ message: "Error retrieving posts" })
+  })
 });
 
 router.delete("/:id", (req, res) => {
