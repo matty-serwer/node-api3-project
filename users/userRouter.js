@@ -96,12 +96,26 @@ router.get("/:id/posts", validateUserId, (req, res) => {
     });
 });
 
-router.delete("/:id", (req, res) => {
-  // do your magic!
+router.delete("/:id", validateUserId, (req, res) => {
+  User.remove(req.params.id)
+    .then((user) => {
+      res.status(200).json(user);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ message: "Error deleting user" });
+    });
 });
 
-router.put("/:id", (req, res) => {
-  // do your magic!
+router.put("/:id", validateUserId, validateUser, (req, res) => {
+  User.update(req.params.id, req.body)
+    .then((user) => {
+      res.status(201).json({ message: "User successfully Updated" });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ message: "Server error user" });
+    });
 });
 
 module.exports = router;
