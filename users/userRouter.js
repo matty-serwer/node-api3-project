@@ -1,47 +1,121 @@
-const express = require('express');
+const express = require("express");
+const User = require("./userDb");
+const Post = require("../posts/postDb");
 
 const router = express.Router();
 
-router.post('/', (req, res) => {
-  // do your magic!
-});
-
-router.post('/:id/posts', (req, res) => {
-  // do your magic!
-});
-
-router.get('/', (req, res) => {
-  // do your magic!
-});
-
-router.get('/:id', (req, res) => {
-  // do your magic!
-});
-
-router.get('/:id/posts', (req, res) => {
-  // do your magic!
-});
-
-router.delete('/:id', (req, res) => {
-  // do your magic!
-});
-
-router.put('/:id', (req, res) => {
-  // do your magic!
-});
-
 //custom middleware
 
-function validateUserId(req, res, next) {
-  // do your magic!
-}
+const validateUserId = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const user = await User.getById(id);
+    if (!user) {
+      res.status(404).json({ message: "Invalid user id" });
+    } else {
+      req.user = user;
+      next();
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: "Error retrieving user from database",
+    });
+  }
+};
 
 function validateUser(req, res, next) {
-  // do your magic!
+  if (!req.body) {
+    res.status(400).json({ message: "Missing user data" });
+  } else if (!req.body.name) {
+    res.status(400).json({ message: "Missing required name field" });
+  } else {
+    next();
+  }
 }
 
 function validatePost(req, res, next) {
-  // do your magic!
+  if (!req.body) {
+    res.status(400).json({ message: "Missing post data" });
+  } else if (!req.body.text) {
+    res.status(400).json({ message: "Missing required text field" });
+  } else {
+    next();
+  }
 }
+
+// routers
+
+router.post("/", validateUser, (req, res) => {
+  User.insert(req.body)
+    .then((user) => {
+      res.status(201).json(user);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ message: "Server error posting new user" });
+    });
+});
+
+router.post("/:id/posts", validatePost, (req, res) => {
+  req.body.user_id = req.params.id;
+  Post.insert(req.body)
+    .then((post) => {
+      res.status(201).json(post);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ message: "Error making post" });
+    });
+});
+
+router.get("/", (req, res) => {
+  User.get(req.query)
+    .then((users) => {
+      res.status(200).json(users);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({
+        message: "Server error retrieving users",
+      });
+    });
+});
+
+router.get("/:id", validateUserId, (req, res) => {
+  res.status(200).json(req.user);
+});
+
+router.get("/:id/posts", validateUserId, (req, res) => {
+  User.getUserPosts(req.params.id)
+    .then((posts) => {
+      res.status(200).json(posts);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ message: "Error retrieving posts" });
+    });
+});
+
+router.delete("/:id", validateUserId, (req, res) => {
+  User.remove(req.params.id)
+    .then((user) => {
+      res.status(200).json(user);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ message: "Error deleting user" });
+    });
+});
+
+router.put("/:id", validateUserId, validateUser, (req, res) => {
+  User.update(req.params.id, req.body)
+    .then((user) => {
+      res.status(201).json({ message: "User successfully Updated" });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ message: "Server error user" });
+    });
+});
 
 module.exports = router;
